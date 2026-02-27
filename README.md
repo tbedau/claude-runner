@@ -8,10 +8,10 @@ A lightweight automation runner for [Claude Code](https://docs.anthropic.com/en/
 
 ```
 ┌────────────────────┐     ┌─────────────┐     ┌──────────────────────────────────┐
-│ launchd / webhook  │────▶│  runner.sh   │────▶│  claude -p "..." --dangerously-  │
-└────────────────────┘     │  retries,    │     │  skip-permissions                │
-                           │  logging,    │     └──────────────────────────────────┘
-                           │  ntfy.sh     │
+│ launchd / webhook  │────▶│  runner.sh  │────▶│  claude -p "..." --dangerously-  │
+└────────────────────┘     │  retries,   │     │  skip-permissions                │
+                           │  logging,   │     └──────────────────────────────────┘
+                           │  ntfy.sh    │
                            └─────────────┘
 ```
 
