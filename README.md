@@ -1,6 +1,8 @@
 # claude-runner
 
-A lightweight automation runner for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Run headless Claude Code jobs on a schedule or via webhooks, using your existing Max subscription.
+A lightweight automation runner for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) for macOS. Run headless Claude Code jobs on a schedule or via webhooks, using your existing Max subscription.
+
+![Dashboard](web/public/screenshot.png)
 
 ## How It Works
 
