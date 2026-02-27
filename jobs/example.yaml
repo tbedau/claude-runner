@@ -1,0 +1,11 @@
+name: example
+prompt: |
+  Summarize the top 3 Hacker News stories right now. For each story,
+  write a one-paragraph summary and explain why it matters.
+
+  Save the output to a file called hn-digest.md in the current directory.
+schedule: 0 8 * * 1-5
+retries: 1
+timeout: 300
+notify: true
+enabled: false

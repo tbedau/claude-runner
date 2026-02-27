@@ -1,0 +1,12 @@
+# Required — protects the server dashboard and API
+auth_token: changeme
+
+# Push notifications via ntfy.sh (optional)
+# ntfy_topic: my-topic
+
+# Override the default working directory for jobs (optional)
+# default_workdir: ~/my-project
+
+# Add any keys here that jobs reference via their `env` map.
+# Example: if a job has env: { ZOTERO_API_KEY: zotero_api_key }
+# zotero_api_key: your-key-here

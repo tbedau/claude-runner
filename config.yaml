@@ -1,0 +1,6 @@
+log_dir: ~/.claude-runner/logs
+state_file: ~/.claude-runner/state.json
+default_workdir: .
+server_port: 7429
+claude_binary: claude
+ntfy_server: https://ntfy.sh
