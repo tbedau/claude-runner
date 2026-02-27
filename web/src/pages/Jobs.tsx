@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, type JobSummary } from "@/lib/api";
+import { cronToHuman } from "@/lib/cron";
 import { useSSE } from "@/hooks/use-sse";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,33 +29,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-function cronToHuman(cron: string): string {
-  const parts = cron.trim().split(/\s+/);
-  if (parts.length !== 5) return cron;
-  const [min, hour, dom, mon, dow] = parts;
-
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const pad = (s: string) => s.padStart(2, "0");
-
-  if (dom === "*" && mon === "*" && dow === "*") {
-    return `Daily at ${pad(hour)}:${pad(min)}`;
-  }
-  if (dom === "*" && mon === "*" && dow !== "*") {
-    const dayNames = dow
-      .split(",")
-      .map((d) => days[parseInt(d, 10)] || d)
-      .join(", ");
-    return `${dayNames} at ${pad(hour)}:${pad(min)}`;
-  }
-  if (min.includes("/")) {
-    return `Every ${min.split("/")[1]} min`;
-  }
-  if (hour.includes("/")) {
-    return `Every ${hour.split("/")[1]} hours`;
-  }
-  return cron;
-}
 
 export default function Jobs() {
   const navigate = useNavigate();
