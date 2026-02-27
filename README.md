@@ -24,7 +24,7 @@ A lightweight automation runner for [Claude Code](https://docs.anthropic.com/en/
 ## Quickstart
 
 ```bash
-git clone <repo-url> && cd claude-runner
+git clone https://github.com/tbedau/claude-runner.git && cd claude-runner
 cp config.local.yaml.example config.local.yaml
 # Edit config.local.yaml — set auth_token to a random string
 ./setup-server.sh
