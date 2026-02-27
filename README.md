@@ -7,12 +7,12 @@ A lightweight automation runner for [Claude Code](https://docs.anthropic.com/en/
 ## How It Works
 
 ```
-┌────────────────────┐     ┌────────────┐     ┌──────────────────────────────────┐
-│ launchd / webhook  │────▶│  runner.sh  │────▶│  claude -p "..." --dangerously-  │
-└────────────────────┘     │  retries,   │     │  skip-permissions                │
-                           │  logging,   │     └──────────────────────────────────┘
-                           │  ntfy.sh    │
-                           └────────────┘
+┌────────────────────┐     ┌─────────────┐     ┌──────────────────────────────────┐
+│ launchd / webhook  │────▶│  runner.sh   │────▶│  claude -p "..." --dangerously-  │
+└────────────────────┘     │  retries,    │     │  skip-permissions                │
+                           │  logging,    │     └──────────────────────────────────┘
+                           │  ntfy.sh     │
+                           └─────────────┘
 ```
 
 - **runner.sh** — runs a single job end-to-end with retries, logging, lockfiles, and push notifications
