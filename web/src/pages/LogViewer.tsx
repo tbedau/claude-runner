@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -90,6 +90,159 @@ function highlightLog(line: string): React.ReactNode {
   return <>{parts}</>;
 }
 
+function truncate(s: string, max: number): string {
+  return s.length > max ? s.slice(0, max) + "…" : s;
+}
+
+function renderStreamEvent(event: any): React.ReactNode | null {
+  const type = event.type;
+  const subtype = event.subtype;
+
+  // system/init
+  if (type === "system" && subtype === "init") {
+    const model = event.model || "unknown";
+    const toolCount = Array.isArray(event.tools) ? event.tools.length : 0;
+    return (
+      <span className="text-primary">
+        Session started · {model} · {toolCount} tools
+      </span>
+    );
+  }
+
+  // rate_limit_event — skip
+  if (type === "rate_limit_event") return null;
+
+  // assistant messages
+  if (type === "assistant" && event.message?.content) {
+    const content = event.message.content;
+    if (!Array.isArray(content) || content.length === 0) return null;
+    const block = content[0];
+
+    // thinking
+    if (block.type === "thinking" && block.thinking) {
+      return (
+        <span className="text-muted-foreground italic">
+          thinking {truncate(block.thinking, 120)}
+        </span>
+      );
+    }
+
+    // text
+    if (block.type === "text" && block.text) {
+      return <span>{block.text}</span>;
+    }
+
+    // tool_use
+    if (block.type === "tool_use") {
+      const name = block.name || "unknown";
+      const input = block.input
+        ? truncate(JSON.stringify(block.input), 120)
+        : "";
+      return (
+        <span>
+          <span className="text-primary">▶ {name}</span>{" "}
+          <span className="text-muted-foreground">{input}</span>
+        </span>
+      );
+    }
+
+    return null;
+  }
+
+  // user / tool_result
+  if (type === "user" && event.message?.content) {
+    const content = event.message.content;
+    if (!Array.isArray(content) || content.length === 0) return null;
+    const block = content[0];
+    if (block.type !== "tool_result") return null;
+
+    const result = event.tool_use_result;
+    let summary: string;
+
+    if (result) {
+      if (result.filenames) {
+        summary = `${result.numFiles ?? result.filenames.length} files`;
+      } else if (result.file?.filePath) {
+        summary = `${result.file.filePath} (${result.file.totalLines ?? "?"} lines)`;
+      } else if (result.structuredPatch) {
+        summary = `edited ${result.filePath ?? "file"}`;
+      } else if (result.query) {
+        const count = Array.isArray(result.results) ? result.results.length : 0;
+        summary = `search: "${truncate(result.query, 60)}" (${count} results)`;
+      } else if (result.newTodos) {
+        const count = result.newTodos.length;
+        summary = `${count} todo${count !== 1 ? "s" : ""} updated`;
+      } else if (result.type === "create" && result.filePath) {
+        summary = `created ${result.filePath}`;
+      } else if (result.stdout !== undefined) {
+        summary = truncate(result.stdout, 120);
+      } else if (result.durationMs !== undefined) {
+        summary = `done (${result.durationMs}ms)`;
+      } else {
+        summary = truncate(
+          typeof block.content === "string"
+            ? block.content
+            : JSON.stringify(block.content),
+          120
+        );
+      }
+    } else {
+      summary = truncate(
+        typeof block.content === "string"
+          ? block.content
+          : JSON.stringify(block.content),
+        120
+      );
+    }
+
+    return (
+      <span className="text-muted-foreground ml-6">{summary}</span>
+    );
+  }
+
+  // result
+  if (type === "result") {
+    const cost = event.total_cost_usd != null ? `$${event.total_cost_usd.toFixed(2)}` : null;
+    const duration =
+      event.duration_ms != null ? `${(event.duration_ms / 1000).toFixed(1)}s` : null;
+    const turns = event.num_turns != null ? `${event.num_turns} turns` : null;
+    const parts = [
+      event.is_error ? "Failed" : "Completed",
+      turns,
+      cost && `cost: ${cost}`,
+      duration && `duration: ${duration}`,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const color = event.is_error ? "text-destructive" : "text-primary";
+    return <span className={`${color} font-medium`}>{parts}</span>;
+  }
+
+  return null;
+}
+
+function processLogLines(
+  lines: string[]
+): { lineNum: number; node: React.ReactNode }[] {
+  const entries: { lineNum: number; node: React.ReactNode }[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.startsWith("{")) {
+      try {
+        const event = JSON.parse(line);
+        const node = renderStreamEvent(event);
+        if (node === null) continue; // skip (e.g. rate_limit_event)
+        entries.push({ lineNum: i + 1, node });
+        continue;
+      } catch {
+        // not valid JSON, fall through to highlightLog
+      }
+    }
+    entries.push({ lineNum: i + 1, node: highlightLog(line) });
+  }
+  return entries;
+}
+
 export default function LogViewer() {
   const { runId } = useParams<{ runId: string }>();
   const { runs: sseRuns, logs: sseLogs } = useSSE();
@@ -177,6 +330,11 @@ export default function LogViewer() {
           : "failed"
     : null;
 
+  const processedLines = useMemo(
+    () => processLogLines(fullLog.split("\n")),
+    [fullLog]
+  );
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -186,8 +344,6 @@ export default function LogViewer() {
       </div>
     );
   }
-
-  const logLines = fullLog.split("\n");
 
   return (
     <div className="space-y-4">
@@ -305,15 +461,15 @@ export default function LogViewer() {
         >
           <pre className="p-4 text-xs leading-5 font-mono whitespace-pre-wrap break-all">
             {fullLog ? (
-              logLines.map((line, i) => (
+              processedLines.map((entry) => (
                 <div
-                  key={i}
+                  key={entry.lineNum}
                   className="hover:bg-accent/30 px-1 -mx-1 rounded-sm"
                 >
                   <span className="hidden sm:inline-block w-10 text-right text-muted-foreground/50 select-none mr-4 tabular-nums">
-                    {i + 1}
+                    {entry.lineNum}
                   </span>
-                  {highlightLog(line)}
+                  {entry.node}
                 </div>
               ))
             ) : (
