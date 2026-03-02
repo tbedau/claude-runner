@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Ensure common tool paths are on PATH (may be missing when invoked from launchd)
+export PATH="/opt/homebrew/bin:$HOME/.bun/bin:$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CONFIG_FILE="${SCRIPT_DIR}/config.yaml"
 CONFIG_LOCAL="${SCRIPT_DIR}/config.local.yaml"
@@ -100,6 +103,7 @@ JOB_RETRIES=0
 JOB_TIMEOUT=""
 JOB_NOTIFY="true"
 JOB_WORKDIR="$DEFAULT_WORKDIR"
+JOB_OUTPUT_FORMAT="stream-json"
 
 if [ "$INLINE" = false ]; then
   PROMPT="$(load_job "$JOB_FILE" prompt)"
@@ -111,6 +115,10 @@ if [ "$INLINE" = false ]; then
   JOB_WORKDIR_RAW="$(load_job "$JOB_FILE" workdir)"
   if [ -n "$JOB_WORKDIR_RAW" ]; then
     JOB_WORKDIR="${JOB_WORKDIR_RAW/#\~/$HOME}"
+  fi
+  JOB_OUTPUT_FORMAT_RAW="$(load_job "$JOB_FILE" output_format)"
+  if [ -n "$JOB_OUTPUT_FORMAT_RAW" ]; then
+    JOB_OUTPUT_FORMAT="$JOB_OUTPUT_FORMAT_RAW"
   fi
 
   # Safety net: skip disabled jobs (schedule should already be removed)
@@ -177,8 +185,13 @@ CMD=(
   "$CLAUDE_BINARY"
   -p "$PROMPT"
   --dangerously-skip-permissions
-  --output-format text
+  --output-format "$JOB_OUTPUT_FORMAT"
 )
+
+# stream-json requires --verbose when used with -p
+if [ "$JOB_OUTPUT_FORMAT" = "stream-json" ]; then
+  CMD+=(--verbose)
+fi
 
 
 # --- Execute with retries ---

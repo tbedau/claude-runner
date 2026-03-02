@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Ensure bun and other tools are on PATH (may be missing when invoked from launchd)
-export PATH="/opt/homebrew/bin:$HOME/.bun/bin:$HOME/.local/bin:$PATH"
+export PATH="/opt/homebrew/bin:$HOME/.bun/bin:$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 JOBS_DIR="${SCRIPT_DIR}/jobs"
@@ -39,7 +39,7 @@ if echo "$EXISTING_CRONTAB" | grep -qF "$CRON_MARKER_START"; then
 fi
 
 # --- Build PATH for launchd environment ---
-LAUNCHD_PATH="/opt/homebrew/bin:$HOME/.bun/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+LAUNCHD_PATH="/opt/homebrew/bin:$HOME/.bun/bin:$HOME/.cargo/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 # --- Convert cron expression to StartCalendarInterval plist XML ---
 # Usage: cron_to_calendar_interval "min hour dom mon dow"
